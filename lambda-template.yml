@@ -29,7 +29,7 @@ Resources:
       Timeout: 3
       Role: !GetAtt CorsLambdaRole.Arn
       Code:
-        S3Bucket: backend-code-on-s3-sg4021-cors
+        S3Bucket: backend-code-on-s3-sg4021-ya2467
         S3Key: cors-lambda.zip
       Description: ''
       FunctionName: LF0
