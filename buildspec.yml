@@ -2,9 +2,9 @@ version: 0.1
 phases:
   install:
     commands:
-      - aws cloudformation package --template-file lambda-template.yaml --s3-bucket backend-code-on-s3-sg4021-ya2467 --output-template-file outputlambda-template.yml
+      - aws cloudformation package --template-file lambda-template.yml --s3-bucket backend-code-on-s3-sg4021-ya2467 --output-template-file outputlambda-template.yml
 artifacts:
   type: zip
   files:
-    - lambda-template.yaml
+    - lambda-template.yml
     - outputlambda-template.yml
