@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An AWS Serverless Specification template describing your function.
+Resources:
+
+  CorsLambdaRole:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    Properties:
+      RoleName:
+        Fn::Sub: cors-lambda-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+            - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+
+  CorsLambda:
+    Type: 'AWS::Lambda::Function'
+    DependsOn: ["CorsLambdaRole"]
+    Properties:
+      Runtime: python3.8
+      Description: ''
+      MemorySize: 128
+      Timeout: 3
+      Role: !GetAtt CorsLambdaRole.Arn
+      Code:
+        S3Bucket: backend-code-on-s3-sg4021-cors
+        S3Key: cors-lambda.zip
+      Description: ''
+      FunctionName: LF0
+      Handler: cors-lambda.lambda_handler
+      MemorySize: 128
+      PackageType: Zip
+      Role: !GetAtt CorsLambdaRole.Arn
+      Runtime: python3.8
+      Timeout: 3

@@ -1,0 +1,337 @@
+ 
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: CloudFormation stack for Smart Photo Album for CCBD Assignment 2.
+Resources:
+  BucketOfSmartPhotoAlbun:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: 'sg4021-bucket-for-photos-b2'
+      PublicAccessBlockConfiguration: 
+        BlockPublicAcls: False
+        BlockPublicPolicy: False
+        IgnorePublicAcls: False
+        RestrictPublicBuckets: False
+  BucketOfSmartPhotoAlbunPolicy:
+    Type: AWS::S3::BucketPolicy
+    DeletionPolicy: Delete
+    Properties:
+      Bucket: !Ref BucketOfSmartPhotoAlbun
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - s3:GetObject
+              - s3:PutObject
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref BucketOfSmartPhotoAlbun
+                - /*
+            Principal: '*'
+  BucketOfFrontEnd:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: 'sg4021-hw2-frontend'
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      PublicAccessBlockConfiguration: 
+        BlockPublicAcls: False
+        BlockPublicPolicy: False
+        IgnorePublicAcls: False
+        RestrictPublicBuckets: False
+  BucketOfFrontEndPolicy:
+    Type: AWS::S3::BucketPolicy
+    DeletionPolicy: Delete
+    Properties:
+      Bucket: !Ref BucketOfFrontEnd
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - s3:GetObject
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref BucketOfFrontEnd
+                - /*
+            Principal: '*'
+            
+  RestApiGatewayOfSmartPhotoAlbun:
+    Type: AWS::ApiGateway::RestApi
+    DeletionPolicy: Delete
+    Properties:
+      BinaryMediaTypes: ["*/*"]
+      Name: "AI Photo Search"
+      Description: "AI Photo Search application, built during the Cloud and Big Data course at Columbia University."
+      Body: 
+        swagger: "2.0"
+        info:
+          description: "AI Photo Search application, built during the Cloud and Big Data course\
+            \ at Columbia University."
+          version: "1.0.0"
+          title: "AI Photo Search"
+        host: "cqlpqgk8sl.execute-api.us-east-1.amazonaws.com"
+        basePath: "/PROD"
+        schemes:
+        - "https"
+        paths:
+          /search:
+            get:
+              operationId: "searchPhotos"
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              parameters:
+              - name: "q"
+                in: "query"
+                required: true
+                type: "string"
+              responses:
+                "200":
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/SearchResponse"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                "500":
+                  description: "500 response"
+                  schema:
+                    $ref: "#/definitions/Error"
+                "403":
+                  description: "403 response"
+                  schema:
+                    $ref: "#/definitions/Error"
+            options:
+              consumes:
+              - "application/json"
+              responses:
+                "200":
+                  description: "200 response"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+          /upload:
+            put:
+              produces:
+              - "application/json"
+              parameters:
+              - name: "bucket"
+                in: "header"
+                required: true
+                type: "string"
+              - name: "key"
+                in: "header"
+                required: true
+                type: "string"
+              - name: "x-amz-meta-customLabels"
+                in: "header"
+                required: true
+                type: "string"
+              responses:
+                "200":
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/MODEL694a97"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+                "500":
+                  description: "500 response"
+                  schema:
+                    $ref: "#/definitions/Error"
+                "403":
+                  description: "403 response"
+                  schema:
+                    $ref: "#/definitions/Error"
+            options:
+              responses:
+                "200":
+                  description: "200 response"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+        definitions:
+          Error:
+            type: "object"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+              message:
+                type: "string"
+          MODEL694a97:
+            type: "object"
+          Photo:
+            type: "object"
+            properties:
+              url:
+                type: "string"
+              labels:
+                type: "array"
+                items:
+                  type: "string"
+          SearchResponse:
+            type: "object"
+            properties:
+              results:
+                type: "array"
+                items:
+                  $ref: "#/definitions/Photo"
+
+  # OpenSerachIndexForPhotoRetrival:
+  #   Type: AWS::OpenSearchService::Domain
+  #   Properties:
+  #     DomainName: 'photos'
+  #     AdvancedSecurityOptions:
+  #       Enabled: true
+  #       InternalUserDatabaseEnabled: true
+  #       MasterUserOptions:
+  #         MasterUserName: 'master'
+  #         MasterUserPassword: 'Columbia110x3$'
+  #     ClusterConfig:
+  #       InstanceType: 't3.small.search'
+  #       InstanceCount: 1
+  #       DedicatedMasterEnabled: False
+  #       ZoneAwarenessEnabled: False
+  #       WarmEnabled: False
+  #     CognitoOptions:
+  #       Enabled: False
+  #     DomainEndpointOptions:
+  #       EnforceHTTPS: True
+  #       TLSSecurityPolicy: Policy-Min-TLS-1-0-2019-07
+  #       CustomEndpointEnabled: False
+  #     EBSOptions:
+  #       EBSEnabled: True
+  #       VolumeType: gp2
+  #       VolumeSize: 10
+  #     EncryptionAtRestOptions:
+  #       Enabled: true
+  #     NodeToNodeEncryptionOptions:
+  #       Enabled: true
+        
+  RootRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - cloudformation.amazonaws.com
+                - codepipeline.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: "root"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "*"
+                Resource: "*"
+  
+  PythonDependencyLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      CompatibleRuntimes:
+        - python3.6
+        - python3.7
+      Content:
+        S3Bucket: python-bucket-for-assignment2-sg4021
+        S3Key: python.zip
+      Description: My layer
+      LayerName: PythonDependencyLayer
+      LicenseInfo: MIT
+  
+  AWSTemplateFormatVersion: '2010-09-09'
+  Description: Lambda function with cfn-response.
+  Resources:
+    corslambda:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        # Role: 'arn:aws:iam::375935093000:role/cors-lambda-role'
+        Handler: lambda_function.lambda_handler
+
+
+  # AWSTemplateFormatVersion: '2010-09-09'
+  # Transform: 'AWS::Serverless-2016-10-31'
+  # Description: An AWS Serverless Specification template describing your function.
+  # Resources:
+  #   corslambda:
+  #     Type: 'AWS::Serverless::Function'
+  #     Properties:
+  #       Handler: lambda_function.lambda_handler
+  #       Runtime: python3.8
+  #       CodeUri: .
+  #       Description: ''
+  #       MemorySize: 128
+  #       Timeout: 3
+  #       Role: 'arn:aws:iam::375935093000:instance-profile/cors-lambda-role'
+
+  # AWSTemplateFormatVersion: '2010-09-09'
+  # Transform: 'AWS::Serverless-2016-10-31'
+  # Description: >-
+  #   An Amazon S3 trigger that retrieves metadata for the object that has been
+  #   updated.
+  # Resources:
+  #   indexphotos:
+  #     Type: 'AWS::Serverless::Function'
+  #     Properties:
+  #       Handler: lambda_function.lambda_handler
+  #       Runtime: python3.7
+  #       CodeUri: .
+  #       Description: >-
+  #         An Amazon S3 trigger that retrieves metadata for the object that has
+  #         been updated.
+  #       MemorySize: 128
+  #       Timeout: 3
+  #       Role: 'arn:aws:iam::710244106907:role/service-role/index-photos-lambda-role'
+  #       Tags:
+  #         'lambda-console:blueprint': s3-get-object-python
+
+  # AWSTemplateFormatVersion: '2010-09-09'
+  # Transform: 'AWS::Serverless-2016-10-31'
+  # Description: An AWS Serverless Specification template describing your function.
+  # Resources:
+  #   searchphotos:
+  #     Type: 'AWS::Serverless::Function'
+  #     Properties:
+  #       Handler: lambda_function.lambda_handler
+  #       Runtime: python3.8
+  #       CodeUri: .
+  #       Description: ''
+  #       MemorySize: 128
+  #       Timeout: 3
+  #       Role: 'arn:aws:iam::710244106907:role/service-role/search-photos-role-y8b314mi'
+  #       Layers:
+  #         - 'arn:aws:lambda:us-east-1:710244106907:layer:PythonDependencyLayer:1'
+
+
+
+
+
+
